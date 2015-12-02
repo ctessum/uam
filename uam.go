@@ -1,5 +1,4 @@
 // Package uam reads UAM formatted files, such as those used by the CAMx air quality model.
-
 package uam
 
 import (
@@ -11,11 +10,8 @@ import (
 	"strings"
 )
 
-var ByteOrder binary.ByteOrder // Default big endian, user can change to little endian
-
-func init() {
-	ByteOrder = binary.BigEndian
-}
+// ByteOrder specifies the byte order of the files.
+var ByteOrder = binary.BigEndian
 
 func readStr(fid io.Reader, length int) (strOut string, err error) {
 	buffer := make([]byte, length)
@@ -51,6 +47,7 @@ func readFloat(fid io.Reader) (float32, error) {
 	return floatOut[0], err
 }
 
+// UAM is a holder for UAM-formatted data.
 type UAM struct {
 	fid         *os.File
 	Name        string
@@ -89,7 +86,7 @@ type UAM struct {
 	Ihr         int32     //hour index
 }
 
-// Function GLIndex takes the indecies for a
+// GLIndex takes the indecies for a
 // 2D ground level array,
 // calculates the 1D-array index, and returns the corresponding value.
 // ihr = hour, k = z index, j = y index, i = x index
@@ -125,143 +122,144 @@ func (d UAM) GLIndex(k int32, j int32, i int32) (index1d int32) {
 //	return
 //}
 
-// Function Open opens a file for reading and reads the header info.
-func Open(filename string) (f UAM, err error) {
+// Open opens a file for reading and reads the header info.
+func Open(filename string) (f *UAM, err error) {
+	f = new(UAM)
 	f.fid, err = os.Open(filename)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	f.Nhrs = int32(24)
 
 	err = readDummy(f.fid, 1)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	f.Name, err = readStr(f.fid, 40)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	f.Note, err = readStr(f.fid, 240)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	f.nseg, err = readInt(f.fid)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	f.Nspec, err = readInt(f.fid)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	f.sdate, err = readInt(f.fid)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	f.begtim, err = readFloat(f.fid)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	f.edate, err = readInt(f.fid)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	f.endtim, err = readFloat(f.fid)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	//fmt.Println(f.Name, f.Note)
 	//	fmt.Println(f.nseg, f.Nspec, f.sdate, f.begtim, f.edate, f.endtim)
 	err = readDummy(f.fid, 2)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	f.orgx, err = readFloat(f.fid) // Center
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	f.orgy, err = readFloat(f.fid) // Center
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	f.iutm, err = readInt(f.fid) // UTM region?
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	f.Utmx, err = readFloat(f.fid) // SW corner
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	f.Utmy, err = readFloat(f.fid) // SW corner
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	f.Dx, err = readFloat(f.fid) // grid size
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	f.Dy, err = readFloat(f.fid) // grid size
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	f.Nx, err = readInt(f.fid) // number of cells
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	f.Ny, err = readInt(f.fid) // number of cells
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	f.Nz, err = readInt(f.fid) // number of layers
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	f.Nzlo, err = readInt(f.fid)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	f.Nzup, err = readInt(f.fid)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	f.hts, err = readFloat(f.fid)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	f.htl, err = readFloat(f.fid)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	f.htu, err = readFloat(f.fid)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	err = readDummy(f.fid, 2)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	_, err = readInt(f.fid) // i1
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	_, err = readInt(f.fid) // j1
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	_, err = readInt(f.fid) //Nx1
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	_, err = readInt(f.fid) //Ny1
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	//	fmt.Println(i1, j1, Nx1, Ny1)
 	err = readDummy(f.fid, 2)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	// Read species names
@@ -270,7 +268,7 @@ func Open(filename string) (f UAM, err error) {
 	for l := int32(0); l < f.Nspec; l++ {
 		spname, err = readStr(f.fid, 40)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		f.Spnames[l] = spname
 	}
@@ -281,16 +279,16 @@ func Open(filename string) (f UAM, err error) {
 
 		err = readDummy(f.fid, 3)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		f.Npts, err = readInt(f.fid) // number of point sources
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		//	fmt.Println(f.Npts)
 		err = readDummy(f.fid, 2)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 
 		f.Xcoord = make([]float32, f.Npts)
@@ -302,43 +300,44 @@ func Open(filename string) (f UAM, err error) {
 		for ip := int32(0); ip < f.Npts; ip++ {
 			f.Xcoord[ip], err = readFloat(f.fid)
 			if err != nil {
-				panic(err)
+				return nil, err
 			}
 			f.Ycoord[ip], err = readFloat(f.fid)
 			if err != nil {
-				panic(err)
+				return nil, err
 			}
 			f.StackHeight[ip], err = readFloat(f.fid)
 			if err != nil {
-				panic(err)
+				return nil, err
 			}
 			f.StackDiam[ip], err = readFloat(f.fid)
 			if err != nil {
-				panic(err)
+				return nil, err
 			}
 			f.StackTemp[ip], err = readFloat(f.fid)
 			if err != nil {
-				panic(err)
+				return nil, err
 			}
 			f.StackVel[ip], err = readFloat(f.fid)
 			if err != nil {
-				panic(err)
+				return nil, err
 			}
 			//		fmt.Println(f.Xcoord[ip],f.Ycoord[ip],f.StackHeight[ip],f.StackDiam[ip],f.StackTemp[ip],f.StackVel[ip])
 		}
 	}
 	err = readDummy(f.fid, 2)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	return
 }
 
+// Close closes the file.
 func (f UAM) Close() {
 	f.fid.Close()
 }
 
-// Function ReadHour reads 1 hour of data from either
+// ReadHour reads 1 hour of data from either
 // a ground level or elevated file.
 func (f UAM) ReadHour(Data map[string][]float32) (
 	[]float32, []float32, []float32, []float32,
@@ -529,6 +528,7 @@ func (f UAM) ReadHour(Data map[string][]float32) (
 		f.StackTemp, f.StackVel, err
 }
 
+// Info provides information about the file.
 func (f UAM) Info() (Dx float32, Dy float32, Nx int32,
 	Ny int32, Nz int32, Utmx float32, Utmy float32, Spnames []string) {
 	Dx = f.Dx
